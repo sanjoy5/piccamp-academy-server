@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express()
 const port = process.env.PORT || 5000
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
 
@@ -46,6 +46,7 @@ async function run() {
 
         const usersCollection = client.db('piccampDB').collection('users')
 
+        // make and send token 
         app.post('/jwt', (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' })
@@ -69,6 +70,32 @@ async function run() {
             }
             const result = await usersCollection.insertOne(user)
             res.send(result)
+        })
+
+        // Make Admin 
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                },
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc)
+            return res.send(result)
+        })
+
+        // Make instructor 
+        app.patch('/users/instructor/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                },
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc)
+            return res.send(result)
         })
 
 
