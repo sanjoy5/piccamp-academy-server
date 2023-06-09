@@ -45,6 +45,7 @@ async function run() {
         await client.connect();
 
         const usersCollection = client.db('piccampDB').collection('users')
+        const classesCollection = client.db('piccampDB').collection('classes')
 
         // make and send token 
         app.post('/jwt', (req, res) => {
@@ -152,6 +153,25 @@ async function run() {
             return res.send(result)
         })
 
+
+        // Classes Collections 
+
+        app.get('/classes', async (req, res) => {
+            const result = await classesCollection.find().toArray()
+            res.send(result)
+        })
+        app.get('/instructorclasses', verifyJWT, verifyInstructor, async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await classesCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.post('/classes', verifyJWT, verifyInstructor, async (req, res) => {
+            const newClass = req.body;
+            const result = await classesCollection.insertOne(newClass)
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
