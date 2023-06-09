@@ -160,10 +160,16 @@ async function run() {
             const result = await classesCollection.find().toArray()
             res.send(result)
         })
+
         app.get('/instructorclasses', verifyJWT, verifyInstructor, async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
             const result = await classesCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get('/manageclasses', verifyJWT, verifyAdmin, async (req, res) => {
+            const result = await classesCollection.find().toArray()
             res.send(result)
         })
 
