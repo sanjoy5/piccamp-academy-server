@@ -202,9 +202,35 @@ async function run() {
                 }
             }
             const result = await classesCollection.updateOne(filter, updateClass)
-            console.log(result);
             res.send(result)
         })
+
+
+        app.patch('/approveclass/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'Approve'
+                },
+            }
+            const result = await classesCollection.updateOne(filter, updateDoc)
+            return res.send(result)
+        })
+
+        app.patch('/denyclass/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'Deny'
+                },
+            }
+            const result = await classesCollection.updateOne(filter, updateDoc)
+            return res.send(result)
+        })
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
