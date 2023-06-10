@@ -157,9 +157,10 @@ async function run() {
         // Classes Collections 
 
         app.get('/classes', async (req, res) => {
-            const result = await classesCollection.find().toArray()
-            res.send(result)
-        })
+            const cursor = classesCollection.find().sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1 });
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         app.get('/instructorclasses', verifyJWT, verifyInstructor, async (req, res) => {
             const email = req.query.email;
