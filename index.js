@@ -178,6 +178,33 @@ async function run() {
             const result = await classesCollection.insertOne(newClass)
             res.send(result)
         })
+        app.get('/updateclasses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await classesCollection.findOne(query)
+            // console.log(result);
+            res.send(result)
+        })
+
+        app.patch('/updateclasses/:id', async (req, res) => {
+            const id = req.params.id;
+            const body = req.body;
+            // console.log(id, body);
+            const filter = { _id: new ObjectId(id) }
+            const updateClass = {
+                $set: {
+                    cname: body.cname,
+                    image: body.image,
+                    iname: body.iname,
+                    email: body.email,
+                    seats: body.seats,
+                    price: body.price,
+                }
+            }
+            const result = await classesCollection.updateOne(filter, updateClass)
+            console.log(result);
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
