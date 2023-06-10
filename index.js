@@ -128,7 +128,7 @@ async function run() {
         })
 
         // Make Admin 
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
@@ -141,7 +141,7 @@ async function run() {
         })
 
         // Make instructor 
-        app.patch('/users/instructor/:id', async (req, res) => {
+        app.patch('/users/instructor/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
@@ -224,6 +224,20 @@ async function run() {
             const updateDoc = {
                 $set: {
                     status: 'Deny'
+                },
+            }
+            const result = await classesCollection.updateOne(filter, updateDoc)
+            return res.send(result)
+        })
+
+        app.patch('/feedbackclass/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const body = req.body
+            // console.log(body);
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    feedback: body?.feedback
                 },
             }
             const result = await classesCollection.updateOne(filter, updateDoc)
