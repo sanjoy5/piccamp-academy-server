@@ -47,6 +47,7 @@ async function run() {
 
         const usersCollection = client.db('piccampDB').collection('users')
         const classesCollection = client.db('piccampDB').collection('classes')
+        const selectedCollection = client.db('piccampDB').collection('selected')
 
         // make and send token 
         app.post('/jwt', (req, res) => {
@@ -75,8 +76,20 @@ async function run() {
             next()
         }
 
+        const verifyStudent = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            if (user?.role !== 'student') {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+            next()
+        }
+
 
         // Users Collections 
+
+
 
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray()
@@ -135,6 +148,19 @@ async function run() {
             res.send(result)
         })
 
+        // Check Student or not 
+        app.get('/users/student/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email
+
+            if (req.decoded.email !== email) {
+                res.send({ student: false })
+            }
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            const result = { student: user?.role === 'student' }
+            res.send(result)
+        })
+
         // Make Admin 
         app.patch('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
@@ -159,6 +185,11 @@ async function run() {
             }
             const result = await usersCollection.updateOne(filter, updateDoc)
             return res.send(result)
+        })
+
+        app.get('/allusers', async (req, res) => {
+            const result = await usersCollection.find().toArray()
+            res.send(result)
         })
 
 
@@ -194,12 +225,12 @@ async function run() {
         })
 
 
-
         app.get('/popularclasses', async (req, res) => {
-            const cursor = classesCollection.find().sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1 });
+            const cursor = classesCollection.find({ status: "Approve" }).sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1 });
             const result = await cursor.toArray();
             res.send(result);
         });
+
 
         app.get('/instructorclasses', verifyJWT, verifyInstructor, async (req, res) => {
             const email = req.query.email;
@@ -284,6 +315,23 @@ async function run() {
             return res.send(result)
         })
 
+
+
+        // Selected Collections 
+
+        app.get('/selectedclasses/:email', verifyJWT, verifyStudent, async (req, res) => {
+            const email = req.params.email
+            query = { semail: email }
+            const result = await selectedCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.post('/selectedclass', async (req, res) => {
+            const body = req.body;
+            console.log(body);
+            const result = await selectedCollection.insertOne(body)
+            res.send(result)
+        })
 
 
         // Send a ping to confirm a successful connection
