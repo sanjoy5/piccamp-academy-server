@@ -218,8 +218,13 @@ async function run() {
 
 
         app.get('/popularclasses', async (req, res) => {
-            const cursor = classesCollection.find({ status: "Approve" }).sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1, enrolled: 1 });
-            const result = await cursor.toArray();
+            const query = { status: "Approve" }
+            const options = {
+                sort: { enrolled: -1 },
+                projection: { _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1, enrolled: 1 },
+            };
+
+            const result = await classesCollection.find(query, options).limit(6).toArray();
             res.send(result);
         });
 
