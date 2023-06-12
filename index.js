@@ -352,6 +352,14 @@ async function run() {
 
         // Payment Collection 
 
+        app.get('/enrolled-history', verifyJWT, async (req, res) => {
+            const email = req.query.email
+            // console.log(email);
+            const query = { email: email }
+            const result = await paymentsCollection.find(query).toArray()
+            res.send(result)
+        })
+
         app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
             // console.log(payment);
