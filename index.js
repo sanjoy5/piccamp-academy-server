@@ -356,7 +356,7 @@ async function run() {
             const email = req.query.email
             // console.log(email);
             const query = { email: email }
-            const result = await paymentsCollection.find(query).toArray()
+            const result = await paymentsCollection.find(query).sort({ date: -1 }).toArray()
             res.send(result)
         })
 
