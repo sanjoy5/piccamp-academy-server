@@ -44,7 +44,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const usersCollection = client.db('piccampDB').collection('users')
         const classesCollection = client.db('piccampDB').collection('classes')
@@ -218,7 +218,7 @@ async function run() {
 
 
         app.get('/popularclasses', async (req, res) => {
-            const cursor = classesCollection.find({ status: "Approve" }).sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1 });
+            const cursor = classesCollection.find({ status: "Approve" }).sort({ enrolled: -1 }).limit(6).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1, enrolled: 1 });
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -320,15 +320,14 @@ async function run() {
 
         app.post('/selectedclass', verifyJWT, async (req, res) => {
             const body = req.body;
-            console.log(body);
+            // console.log(body);
             const result = await selectedCollection.insertOne(body)
             res.send(result)
         })
 
         app.delete('/deleteSelectedclass/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            // console.log(id);
-            const query = { _id: id }
+            const query = { _id: new ObjectId(id) }
             const result = await selectedCollection.deleteOne(query)
             res.send(result)
         })
@@ -355,8 +354,22 @@ async function run() {
 
         app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
-            const result = await paymentsCollection.insertOne(payment)
-            res.send(result)
+            // console.log(payment);
+            const insertResult = await paymentsCollection.insertOne(payment)
+            const deleteQuery = { _id: new ObjectId(payment.selected._id) }
+            const deleteResult = await selectedCollection.deleteOne(deleteQuery)
+            const updateQuery = { _id: new ObjectId(payment.selected.cId) }
+            const updateResult = await classesCollection.updateOne(
+                updateQuery,
+                {
+                    $set: {
+                        seats: payment.updatecls.seats > 0 && parseInt(payment.updatecls.seats) - 1,
+                        enrolled: payment.updatecls.seats !== 0 && parseInt(payment.updatecls.enrolled) + 1
+                    }
+                }
+            )
+
+            res.send({ insertResult, deleteResult, updateResult })
         })
 
 
