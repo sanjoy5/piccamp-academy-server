@@ -5,6 +5,7 @@ const port = process.env.PORT || 5000
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY)
 
 
 
@@ -48,6 +49,7 @@ async function run() {
         const usersCollection = client.db('piccampDB').collection('users')
         const classesCollection = client.db('piccampDB').collection('classes')
         const selectedCollection = client.db('piccampDB').collection('selected')
+        const paymentsCollection = client.db('piccampDB').collection('payments')
 
         // make and send token 
         app.post('/jwt', (req, res) => {
@@ -71,16 +73,6 @@ async function run() {
             const query = { email: email }
             const user = await usersCollection.findOne(query)
             if (user?.role !== 'instructor') {
-                return res.status(403).send({ error: true, message: 'forbidden access' })
-            }
-            next()
-        }
-
-        const verifyStudent = async (req, res, next) => {
-            const email = req.decoded.email;
-            const query = { email: email }
-            const user = await usersCollection.findOne(query)
-            if (user?.role !== 'student') {
                 return res.status(403).send({ error: true, message: 'forbidden access' })
             }
             next()
@@ -196,7 +188,7 @@ async function run() {
         // Classes Collections 
 
         app.get('/classes', async (req, res) => {
-            const cursor = classesCollection.find({ status: "Approve" }).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1 });
+            const cursor = classesCollection.find({ status: "Approve" }).project({ _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1, enrolled: 1 });
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -319,19 +311,57 @@ async function run() {
 
         // Selected Collections 
 
-        app.get('/selectedclasses/:email', verifyJWT, verifyStudent, async (req, res) => {
-            const email = req.params.email
+        app.get('/selectedclasses', verifyJWT, async (req, res) => {
+            const email = req.query.email
             query = { semail: email }
             const result = await selectedCollection.find(query).toArray()
             res.send(result)
         })
 
-        app.post('/selectedclass', async (req, res) => {
+        app.post('/selectedclass', verifyJWT, async (req, res) => {
             const body = req.body;
             console.log(body);
             const result = await selectedCollection.insertOne(body)
             res.send(result)
         })
+
+        app.delete('/deleteSelectedclass/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            // console.log(id);
+            const query = { _id: id }
+            const result = await selectedCollection.deleteOne(query)
+            res.send(result)
+        })
+
+
+        // create payment intent 
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = parseFloat((price * 100).toFixed(2));
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card'],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+
+        // Payment Collection 
+
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment)
+            res.send(result)
+        })
+
+
+
+
 
 
         // Send a ping to confirm a successful connection
@@ -343,8 +373,6 @@ async function run() {
     }
 }
 run().catch(console.dir);
-
-
 
 
 app.get('/', (req, res) => {
