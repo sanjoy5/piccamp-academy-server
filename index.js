@@ -223,7 +223,6 @@ async function run() {
                 sort: { enrolled: -1 },
                 projection: { _id: 1, cname: 1, image: 1, iname: 1, email: 1, seats: 1, price: 1, enrolled: 1 },
             };
-
             const result = await classesCollection.find(query, options).limit(6).toArray();
             res.send(result);
         });
@@ -332,6 +331,7 @@ async function run() {
 
         app.delete('/deleteSelectedclass/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
+            console.log(id);
             const query = { _id: new ObjectId(id) }
             const result = await selectedCollection.deleteOne(query)
             res.send(result)
@@ -359,7 +359,7 @@ async function run() {
 
         app.get('/enrolled-history', verifyJWT, async (req, res) => {
             const email = req.query.email
-            // console.log(email);
+            console.log(email);
             const query = { email: email }
             const result = await paymentsCollection.find(query).sort({ date: -1 }).toArray()
             res.send(result)
